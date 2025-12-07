@@ -31,16 +31,8 @@
       "distributionCountries": [],
       "isAvailableWorldwide": true,
       "locales": {
-        "en-US": {
-          "description": "Sample Full Description",
-          "examplePhrases": [
-            "Alexa open hello world",
-            "hello",
-            "help"
-          ],
-          "keywords": [],
-          "name": "Movie Picker",
-          "summary": "Sample Short Description"
+        "es-MX": {
+          "name": "Movie Picker"
         }
       },
       "testingInstructions": "Sample Testing Instructions."

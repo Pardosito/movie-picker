@@ -1,22 +1,12 @@
-# -*- coding: utf-8 -*-
-
-# This sample demonstrates handling intents from an Alexa skill using the Alexa Skills Kit SDK for Python.
-# Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
-# session persistence, api calls, and more.
-# This sample is built using the handler classes approach in skill builder.
 import logging
+import os
+import boto3
 import ask_sdk_core.utils as ask_utils
-
-from ask_sdk_core.skill_builder import SkillBuilder
-from ask_sdk_core.dispatch_components import AbstractRequestHandler
-from ask_sdk_core.dispatch_components import AbstractExceptionHandler
+from ask_sdk_core.skill_builder import CustomSkillBuilder
+from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractExceptionHandler
 from ask_sdk_core.handler_input import HandlerInput
-
 from ask_sdk_model import Response
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
+from ask_sdk_dynamodb.adapter import DynamoDbAdapter
 
 from handlers.AgregarGenerosIntentHandler import AgregarGenerosIntentHandler
 from handlers.CancelOrStopIntentHandler import CancelOrStopIntentHandler
@@ -30,29 +20,35 @@ from handlers.ListarGenerosIntentHandler import ListarGenerosIntentHandler
 from handlers.MostrarOpcionesIntentHandler import MostrarOpcionesIntentHandler
 from handlers.RecomendarPeliculaIntentHandler import RecomendarPeliculaIntentHandler
 from handlers.SessionEndedRequestHandler import SessionEndedRequestHandler
-from handlers.SiguientePaginaIntentHandler import SiguientePaginaIntentHandler
+from handlers.SiguientePaginaIntentHandler import SiguientePeliculaIntentHandler
+from handlers.SiguientePaginaIntentHandler import YesIntentHandler
+from handlers.SiguientePaginaIntentHandler import NoIntentHandler
 
-# The SkillBuilder object acts as the entry point for your skill, routing all request and response
-# payloads to the handlers above. Make sure any new handlers or interceptors you've
-# defined are included below. The order matters - they're processed top to bottom.
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
+ddb_region = os.environ.get('DYNAMODB_PERSISTENCE_REGION')
+ddb_table_name = os.environ.get('DYNAMODB_PERSISTENCE_TABLE_NAME')
+ddb_resource = boto3.resource('dynamodb', region_name=ddb_region)
+dynamodb_adapter = DynamoDbAdapter(table_name=ddb_table_name, create_table=False, dynamodb_resource=ddb_resource)
 
-sb = SkillBuilder()
+sb = CustomSkillBuilder(persistence_adapter=dynamodb_adapter)
 
 sb.add_request_handler(LaunchRequestHandler())
-sb.add_request_handler(HelloWorldIntentHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
-sb.add_request_handler(FallbackIntentHandler())
 sb.add_request_handler(SessionEndedRequestHandler())
+sb.add_request_handler(FallbackIntentHandler())
 sb.add_request_handler(AgregarGenerosIntentHandler())
 sb.add_request_handler(EliminarGenerosIntentHandler())
 sb.add_request_handler(ListarGenerosIntentHandler())
 sb.add_request_handler(MostrarOpcionesIntentHandler())
 sb.add_request_handler(RecomendarPeliculaIntentHandler())
-sb.add_request_handler(SiguientePaginaIntentHandler())
-sb.add_request_handler(IntentReflectorHandler()) # make sure IntentReflectorHandler is last so it doesn't override your custom intent handlers
+sb.add_request_handler(SiguientePeliculaIntentHandler())
+sb.add_request_handler(YesIntentHandler())
+sb.add_request_handler(NoIntentHandler())
 
+sb.add_request_handler(IntentReflectorHandler())
 sb.add_exception_handler(CatchAllExceptionHandler())
 
 lambda_handler = sb.lambda_handler()
