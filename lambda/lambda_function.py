@@ -27,11 +27,31 @@ from handlers.SiguientePaginaIntentHandler import NoIntentHandler
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-ddb_region = os.environ.get('DYNAMODB_PERSISTENCE_REGION')
-ddb_table_name = os.environ.get('DYNAMODB_PERSISTENCE_TABLE_NAME')
-ddb_resource = boto3.resource('dynamodb', region_name=ddb_region)
-dynamodb_adapter = DynamoDbAdapter(table_name=ddb_table_name, create_table=False, dynamodb_resource=ddb_resource)
+# =========================
+# Singleton para DynamoDB
+# =========================
+class DynamoDBSingleton:
+    _instance = None
 
+    def __new__(cls):
+        if cls._instance is None:
+            logger.info("Creando la instancia única de DynamoDbAdapter...")
+            ddb_region = os.environ.get('DYNAMODB_PERSISTENCE_REGION')
+            ddb_table_name = os.environ.get('DYNAMODB_PERSISTENCE_TABLE_NAME')
+            ddb_resource = boto3.resource('dynamodb', region_name=ddb_region)
+            cls._instance = DynamoDbAdapter(
+                table_name=ddb_table_name,
+                create_table=False,
+                dynamodb_resource=ddb_resource
+            )
+        return cls._instance
+
+# Obtenemos la instancia única
+dynamodb_adapter = DynamoDBSingleton()
+
+# =========================
+# Skill Builder
+# =========================
 sb = CustomSkillBuilder(persistence_adapter=dynamodb_adapter)
 
 sb.add_request_handler(LaunchRequestHandler())
