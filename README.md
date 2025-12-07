@@ -40,6 +40,14 @@ El proyecto se organiza en tres capas principales:
    Esto permite cambiar el comportamiento sin modificar el handler principal.
 3. **Singleton**: Se aplica en la configuración de DynamoDB para asegurar una única instancia de persistencia durante toda la ejecución de la skill.
 
+## Diagramas C4's
+
+Existe una carpeta llamada **DiagramsC4** en el que se encuentran los diagramas pertinentes que detallan el contexto del proyecto y a continuación una breve explicación de que hacen
+1. **Movie Picker Context**: Este el el primer diagrama, aquí explicamos los actores que interactuan en la ejecución para el proyecto
+2. **Movie Picker Containers Alexa Skill**: El segundo diagrama se muestran los sistemas que actúan en una interacción básica en la que nuestra Alexa Skill es llamada (esto por medio de contenedores)
+3. **Movie Picker Components Alexa Skill**: Finalmente en archivo de MermaidChart se explica una comunicación interna de los componentes del sistema en la Skill Movie-Picker
+
+
 ## Instalación
 
 1. Clonar el repositorio:
