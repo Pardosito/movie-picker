@@ -1,9 +1,6 @@
 import logging
-
 import ask_sdk_core.utils as ask_utils
-from ask_sdk_core.dispatch_components import AbstractRequestHandler
-from ask_sdk_core.handler_input import HandlerInput
-from ask_sdk_model import Response
+from handlers.BaseIntentHandler import BaseIntentHandler
 from helpers.frases import ALGO_MAS
 from helpers.utils import get_random_phrase
 
@@ -11,49 +8,74 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class AgregarGenerosIntentHandler(AbstractRequestHandler):
-    """Handler encargado de agregar los géneros..."""
+class AgregarGenerosIntentHandler(BaseIntentHandler):
+    """Handler encargado de agregar géneros a la lista del usuario."""
 
     def can_handle(self, handler_input):
-        return ask_utils.is_intent_name("AgregarGenerosIntent")(handler_input)
+        resultado = ask_utils.is_intent_name("AgregarGenerosIntent")(handler_input)
+        logger.info(f"AgregarGenerosIntentHandler.can_handle() = {resultado}")
+        return resultado
+
+    def preparar_datos(self, handler_input, attr):
+        """Extrae el slot 'genero' del intent"""
+        genero = ask_utils.get_slot_value(handler_input, "genero")
+        logger.info(f"Slot 'genero' capturado: {genero}")
+        return {"genero": genero}
+
+    def ejecutar_accion(self, handler_input, attr, datos):
+        """Agrega el género a la lista de géneros del usuario"""
+        genero = datos["genero"]
+        logger.info(f"Ejecutando acción con género: {genero}")
+
+        if not genero:
+            return "¡Perfecto! Vamos a agregar un género. ¿Cuál sería?"
+
+        if "lista_generos" not in attr:
+            attr["lista_generos"] = []
+
+        if genero not in attr["lista_generos"]:
+            attr["lista_generos"].append(genero)
+            return f"¡Listo! He agregado {genero} a tu lista. {get_random_phrase(ALGO_MAS)}"
+        else:
+            return f"El género {genero} ya estaba en tu lista. {get_random_phrase(ALGO_MAS)}"
+
+    def reprompt(self):
+        return get_random_phrase(ALGO_MAS)
+
+    def error_message(self):
+        return "Hubo un problema agregando el género. Intentemos de nuevo."
 
     def handle(self, handler_input):
+        """Override para asegurar guardado de persistent attributes"""
+        logger.info("===== ENTRANDO A AgregarGenerosIntentHandler.handle() =====")
         try:
-            genero = ask_utils.get_slot_value(handler_input, "genero")
             attr = handler_input.attributes_manager.persistent_attributes
 
-            if not genero:
-                return (
-                    handler_input.response_builder.speak(
-                        "¡Perfecto! Vamos a agregar un género. ¿Cuál sería?"
-                    )
-                    .ask("Perfecto ¿Qué género quieres agregar?")
-                    .response
-                )
+            logger.info(f"ANTES de agregar - Atributos: {attr}")
 
-            if "lista_generos" not in attr:
-                attr["lista_generos"] = []
+            datos = self.preparar_datos(handler_input, attr)
 
-            if genero not in attr["lista_generos"]:
-                attr["lista_generos"].append(genero)
-                speak_output = f"¡Listo! He agregado {genero} a tu lista. {get_random_phrase(ALGO_MAS)}"
-            else:
-                speak_output = f"El género {genero} ya estaba en tu lista. {get_random_phrase(ALGO_MAS)}"
+            speak_output = self.ejecutar_accion(handler_input, attr, datos)
 
+            logger.info(f"DESPUÉS de agregar - Atributos: {attr}")
+
+            handler_input.attributes_manager.persistent_attributes = attr
             handler_input.attributes_manager.save_persistent_attributes()
 
+            logger.info("Atributos guardados exitosamente")
+
             return (
-                handler_input.response_builder.speak(speak_output)
-                .ask(get_random_phrase(ALGO_MAS))
+                handler_input.response_builder
+                .speak(speak_output)
+                .ask(self.reprompt())
                 .response
             )
 
         except Exception as e:
-            logger.error(f"Error en AgregarGenerosIntent: {e}", exc_info=True)
+            logger.error(f"Error en {self.__class__.__name__}: {e}", exc_info=True)
             return (
-                handler_input.response_builder.speak(
-                    "Hubo un problema agregando el género. Intentemos de nuevo."
-                )
-                .ask("¿Qué género quieres agregar?")
+                handler_input.response_builder
+                .speak(self.error_message())
+                .ask(self.reprompt())
                 .response
             )

@@ -1,10 +1,6 @@
 import logging
-
 import ask_sdk_core.utils as ask_utils
-from ask_sdk_core.dispatch_components import AbstractRequestHandler
-from ask_sdk_core.handler_input import HandlerInput
-from ask_sdk_model import Response
-from ask_sdk_model.dialog import ElicitSlotDirective
+from handlers.BaseIntentHandler import BaseIntentHandler
 from helpers.frases import ALGO_MAS, OPCIONES_MENU
 from helpers.utils import get_random_phrase
 
@@ -12,70 +8,68 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class EliminarGenerosIntentHandler(AbstractRequestHandler):
-    """Handler para EliminarGenerosIntent."""
+class EliminarGenerosIntentHandler(BaseIntentHandler):
+    """Handler para eliminar géneros de la lista del usuario."""
 
     def can_handle(self, handler_input):
-        # type: (HandlerInput) -> bool
         return ask_utils.is_intent_name("EliminarGenerosIntent")(handler_input)
 
+    def preparar_datos(self, handler_input, attr):
+        """Extrae el slot 'genero' del intent"""
+        genero = ask_utils.get_slot_value(handler_input, "genero")
+        return {"genero": genero}
+
+    def ejecutar_accion(self, handler_input, attr, datos):
+        """Elimina el género de la lista si existe"""
+        genero = datos["genero"]
+
+        if not genero:
+            return "Perfecto, ¿Qué género quieres eliminar?"
+
+        if "lista_generos" not in attr or not attr["lista_generos"]:
+            return f"Oops! Parece que tu lista está vacía o es la primera vez que vienes. Intenta añadir un género primero. {get_random_phrase(ALGO_MAS)}"
+
+        if genero not in attr["lista_generos"]:
+            return f"¡Vaya! El género {genero} no aparece en tu lista de favoritos, así que no puedo borrarlo. {get_random_phrase(ALGO_MAS)}"
+
+        attr["lista_generos"].remove(genero)
+        return f"Listones de colores, el género {genero} ha sido eliminado. {get_random_phrase(ALGO_MAS)}"
+
+    def reprompt(self):
+        return get_random_phrase(ALGO_MAS)
+
+    def error_message(self):
+        return "Hubo un problema eliminando el género."
+
     def handle(self, handler_input):
-        # type: (HandlerInput) -> Response
+        """Override para asegurar guardado de persistent attributes"""
         try:
-            genero = ask_utils.get_slot_value(handler_input, "genero")
             attr = handler_input.attributes_manager.persistent_attributes
 
-            if not genero:
-                current_intent = handler_input.request_envelope.request.intent
+            logger.info(f"ANTES de eliminar - Atributos: {attr}")
 
-                speak_output = "Perfecto, ¿Qué género quieres eliminar?"
+            datos = self.preparar_datos(handler_input, attr)
+            speak_output = self.ejecutar_accion(handler_input, attr, datos)
 
-                return (
-                    handler_input.response_builder.speak(speak_output)
-                    .ask(speak_output)
-                    .add_directive(
-                        ElicitSlotDirective(
-                            updated_intent=current_intent, slot_to_elicit="genero"
-                        )
-                    )
-                    .response
-                )
+            logger.info(f"DESPUÉS de eliminar - Atributos: {attr}")
 
-            speak_output = ""
+            handler_input.attributes_manager.persistent_attributes = attr
+            handler_input.attributes_manager.save_persistent_attributes()
 
-            if "lista_generos" not in attr or not attr["lista_generos"]:
-                speak_output = f"Oops! Parece que tu lista está vacía o es la primera vez que vienes. Intenta añadir un género primero. {get_random_phrase(ALGO_MAS)}"
-                return (
-                    handler_input.response_builder.speak(speak_output)
-                    .ask(get_random_phrase(OPCIONES_MENU))
-                    .response
-                )
+            logger.info("Atributos guardados exitosamente")
 
-            elif genero not in attr["lista_generos"]:
-                speak_output = f"¡Vaya! El género {genero} no aparece en tu lista de favoritos, así que no puedo borrarlo. {get_random_phrase(ALGO_MAS)}"
-                return (
-                    handler_input.response_builder.speak(speak_output)
-                    .ask(get_random_phrase(ALGO_MAS))
-                    .response
-                )
-
-            else:
-                attr["lista_generos"].remove(genero)
-                handler_input.attributes_manager.save_persistent_attributes()
-
-                speak_output = f"Listones de colores, el género {genero} ha sido eliminado. {get_random_phrase(ALGO_MAS)}"
-                return (
-                    handler_input.response_builder.speak(speak_output)
-                    .ask(get_random_phrase(ALGO_MAS))
-                    .response
-                )
+            return (
+                handler_input.response_builder
+                .speak(speak_output)
+                .ask(self.reprompt())
+                .response
+            )
 
         except Exception as e:
-            logger.error(f"Error en EliminarGeneroIntent: {e}", exc_info=True)
+            logger.error(f"Error en {self.__class__.__name__}: {e}", exc_info=True)
             return (
-                handler_input.response_builder.speak(
-                    "Hubo un problema eliminando el género."
-                )
-                .ask("¿Qué deseas hacer ahora?")
+                handler_input.response_builder
+                .speak(self.error_message())
+                .ask(self.reprompt())
                 .response
             )

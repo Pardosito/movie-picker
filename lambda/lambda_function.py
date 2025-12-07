@@ -1,13 +1,10 @@
 import logging
 import os
 import boto3
-import ask_sdk_core.utils as ask_utils
 from ask_sdk_core.skill_builder import CustomSkillBuilder
-from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractExceptionHandler
-from ask_sdk_core.handler_input import HandlerInput
-from ask_sdk_model import Response
 from ask_sdk_dynamodb.adapter import DynamoDbAdapter
 
+# Importar handlers
 from handlers.AgregarGenerosIntentHandler import AgregarGenerosIntentHandler
 from handlers.CancelOrStopIntentHandler import CancelOrStopIntentHandler
 from handlers.CatchAllExceptionHandler import CatchAllExceptionHandler
@@ -20,12 +17,17 @@ from handlers.ListarGenerosIntentHandler import ListarGenerosIntentHandler
 from handlers.MostrarOpcionesIntentHandler import MostrarOpcionesIntentHandler
 from handlers.RecomendarPeliculaIntentHandler import RecomendarPeliculaIntentHandler
 from handlers.SessionEndedRequestHandler import SessionEndedRequestHandler
-from handlers.SiguientePaginaIntentHandler import SiguientePeliculaIntentHandler
-from handlers.SiguientePaginaIntentHandler import YesIntentHandler
-from handlers.SiguientePaginaIntentHandler import NoIntentHandler
+from handlers.SiguientePeliculaIntentHandler import (
+    SiguientePeliculaIntentHandler,
+    YesIntentHandler,
+    NoIntentHandler
+)
+from handlers.SpinTheWheelIntentHandler import SpinTheWheelIntentHandler
+from handlers.PeliculaDiaIntentHandler import PeliculaDiaIntentHandler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 # =========================
 # Singleton para DynamoDB
@@ -46,28 +48,41 @@ class DynamoDBSingleton:
             )
         return cls._instance
 
-# Obtenemos la instancia única
+
 dynamodb_adapter = DynamoDBSingleton()
+
 
 # =========================
 # Skill Builder
 # =========================
 sb = CustomSkillBuilder(persistence_adapter=dynamodb_adapter)
 
+# Handlers principales
 sb.add_request_handler(LaunchRequestHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
 sb.add_request_handler(SessionEndedRequestHandler())
 sb.add_request_handler(FallbackIntentHandler())
+
+# Handlers de géneros
 sb.add_request_handler(AgregarGenerosIntentHandler())
 sb.add_request_handler(EliminarGenerosIntentHandler())
 sb.add_request_handler(ListarGenerosIntentHandler())
-sb.add_request_handler(MostrarOpcionesIntentHandler())
+
+# Handlers de películas
 sb.add_request_handler(RecomendarPeliculaIntentHandler())
+sb.add_request_handler(PeliculaDiaIntentHandler())
+sb.add_request_handler(SpinTheWheelIntentHandler())
 sb.add_request_handler(SiguientePeliculaIntentHandler())
+
+# Handlers de navegación
 sb.add_request_handler(YesIntentHandler())
 sb.add_request_handler(NoIntentHandler())
 
+# Handler de opciones
+sb.add_request_handler(MostrarOpcionesIntentHandler())
+
+# Handlers de último recurso
 sb.add_request_handler(IntentReflectorHandler())
 sb.add_exception_handler(CatchAllExceptionHandler())
 

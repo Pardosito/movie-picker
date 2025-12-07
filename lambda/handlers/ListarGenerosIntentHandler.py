@@ -1,42 +1,41 @@
 import logging
 import ask_sdk_core.utils as ask_utils
-from ask_sdk_core.dispatch_components import AbstractRequestHandler
-from helpers.frases import PREGUNTAS_QUE_HACER, SALUDO_INICIAL, SALUDOS
+from handlers.BaseIntentHandler import BaseIntentHandler
+from helpers.frases import ALGO_MAS
 from helpers.utils import get_random_phrase
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class LaunchRequestHandler(AbstractRequestHandler):
-    """Handler for Skill Launch."""
+
+class ListarGenerosIntentHandler(BaseIntentHandler):
+    """Handler para listar los géneros favoritos del usuario."""
+
     def can_handle(self, handler_input):
-        return ask_utils.is_request_type("LaunchRequest")(handler_input)
+        return ask_utils.is_intent_name("ListarGenerosIntent")(handler_input)
 
-    def handle(self, handler_input):
-        try:
-            attr = handler_input.attributes_manager.persistent_attributes
+    def preparar_datos(self, handler_input, attr):
+        """No necesita datos del intent, solo de los atributos"""
+        return {}
 
-            logger.info(f"DEBUG - CONTENIDO DB: {attr}")
+    def ejecutar_accion(self, handler_input, attr, datos):
+        """Lista todos los géneros guardados del usuario"""
+        saved_genres = attr.get("lista_generos", [])
 
-            saved_genres = attr.get("lista_generos")
+        if not saved_genres:
+            return f"Aún no tienes géneros favoritos guardados. ¿Quieres agregar algunos? {get_random_phrase(ALGO_MAS)}"
 
-            if saved_genres:
-                logger.info(f"Usuario recurrente. Generos: {saved_genres}")
-                saludo = get_random_phrase(SALUDOS)
-                speak_output = saludo
-            else:
-                logger.info("Usuario nuevo (sin géneros guardados).")
-                speak_output = SALUDO_INICIAL
+        if len(saved_genres) == 1:
+            generos_texto = saved_genres[0]
+        elif len(saved_genres) == 2:
+            generos_texto = f"{saved_genres[0]} y {saved_genres[1]}"
+        else:
+            generos_texto = ", ".join(saved_genres[:-1]) + f" y {saved_genres[-1]}"
 
-            return (
-                handler_input.response_builder.speak(speak_output)
-                .ask(get_random_phrase(PREGUNTAS_QUE_HACER))
-                .response
-            )
-        except Exception as e:
-            logger.error(f"Error en LaunchRequest: {e}", exc_info=True)
-            return (
-                handler_input.response_builder.speak("Hubo un error cargando la skill")
-                .ask("¿Qué deseas hacer?")
-                .response
-            )
+        return f"Tus géneros favoritos son: {generos_texto}. {get_random_phrase(ALGO_MAS)}"
+
+    def reprompt(self):
+        return get_random_phrase(ALGO_MAS)
+
+    def error_message(self):
+        return "Hubo un problema mostrando tus géneros."
