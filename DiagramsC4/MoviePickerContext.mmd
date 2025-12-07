@@ -1,0 +1,16 @@
+flowchart TB
+ subgraph subGraph0["External Systems"]
+        TMDb["The Movie Database API"]
+  end
+ subgraph subGraph1["Movie Picker System"]
+        ALEXA["Skill de Alexa<br>Movie Picker"]
+  end
+    USUARIO[["Persona/s"]] --> ALEXA
+    ALEXA --> TMDb
+
+     TMDb:::external
+     ALEXA:::system
+     USUARIO:::person
+    classDef external fill:#cae0c6,stroke:#3d6e46
+    classDef system fill:#d4e1f5,stroke:#3a66a7
+    classDef person fill:#e4d6e9,stroke:#5e3a71

@@ -1,0 +1,24 @@
+flowchart TB
+ subgraph subGraph0["External Systems"]
+        TMDb["The Movie DataBase API"]
+  end
+ subgraph subGraph1["Alexa Platform"]
+        ALEXA_SERVICE["Alexa Skills Kit<br>Servicio de Voz"]
+  end
+ subgraph subGraph2["AWS Cloud"]
+        LAMBDA["Lambda Function<br>Node.js/Python"]
+  end
+    USUARIO[["Persona/s"]] --> ALEXA_SERVICE
+    ALEXA_SERVICE --> LAMBDA
+    LAMBDA --> TMDb
+
+     TMDb:::external
+     ALEXA_SERVICE:::alexa
+     LAMBDA:::aws
+     LAMBDA:::aws
+     USUARIO:::person
+    classDef external fill:#cae0c6,stroke:#3d6e46
+    classDef alexa fill:#ffd6cc,stroke:#cc5c3a
+    classDef aws fill:#d4e1f5,stroke:#3a66a7
+    classDef storage fill:#e4d6e9,stroke:#5e3a71
+    classDef person fill:#fff2cc,stroke:#d6b656

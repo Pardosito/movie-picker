@@ -1,0 +1,24 @@
+graph TB
+    subgraph External Dependencies
+        TMDb[The Movie Database API<br/>TMDB.org]
+    end
+
+    subgraph AWS Lambda Function
+        HANDLER[Alexa Request<br/>Handler]
+        MOVIE_CONTROLLER[Movie Controller]
+        MOVIE_SERVICE[Movie Service]
+        API_CLIENT[The Movie DataBase API Client]
+        RESPONSE_BUILDER[Response Builder]
+    end
+
+    HANDLER --> MOVIE_CONTROLLER
+    MOVIE_CONTROLLER --> MOVIE_SERVICE
+    MOVIE_SERVICE --> API_CLIENT
+    MOVIE_SERVICE --> RESPONSE_BUILDER
+    API_CLIENT --> TMDb
+
+    classDef external fill:#cae0c6,stroke:#3d6e46
+    classDef component fill:#d4e1f5,stroke:#3a66a7
+
+    class TMDb external
+    class HANDLER,MOVIE_CONTROLLER,MOVIE_SERVICE,API_CLIENT,RESPONSE_BUILDER component
