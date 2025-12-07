@@ -2,13 +2,10 @@ import logging
 import ask_sdk_core.utils as ask_utils
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_model import Response
-
-# Import your helper
 from helpers.api import get_movie_list
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
 
 class RecomendarPeliculaIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
@@ -17,10 +14,8 @@ class RecomendarPeliculaIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         session_attr = handler_input.attributes_manager.session_attributes
 
-        # 1. Fetch from API
         result = get_movie_list(handler_input)
 
-        # 2. Handle API Errors (Strings)
         if isinstance(result, str):
             msgs = {
                 "first_time": "No tienes géneros guardados. Dime qué te gusta primero.",
@@ -30,10 +25,8 @@ class RecomendarPeliculaIntentHandler(AbstractRequestHandler):
             }
             speak_output = msgs.get(result, "Error desconocido.")
 
-            # If there is an error, we usually END the session, but you can keep it open if you want
             return handler_input.response_builder.speak(speak_output).response
 
-        # 3. SUCCESS: Save queue to session
         movies_clean = []
         for m in result:
             movies_clean.append({
@@ -46,7 +39,6 @@ class RecomendarPeliculaIntentHandler(AbstractRequestHandler):
 
         logger.info(f"Guardada cola de peliculas. Tamaño: {len(movies_clean)}")
 
-        # 4. Speak the first movie AND Keep Session Open
         first_movie = movies_clean[0]
         title = first_movie['title']
         overview = first_movie['overview']
@@ -66,9 +58,6 @@ class RecomendarPeliculaIntentHandler(AbstractRequestHandler):
             .response
         )
 
-        # LOG THE "SHOULD END SESSION" FLAG
-        # If this says 'True' or 'None', your code is closing the mic.
-        # If it says 'False', your code is correct and the issue is the Simulator/Device.
         logger.info(f"SESSION END FLAG: {response.should_end_session}")
 
         return response

@@ -1,12 +1,12 @@
 import logging
 import json
 import os
+import random
 from urllib import request, parse, error
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# --- CONFIGURATION ---
 GENRES_MAP = {
     "accion": "28", "acción": "28", "aventura": "12", "aventuras": "12",
     "animacion": "16", "animación": "16", "comedia": "35", "crimen": "80",
@@ -19,7 +19,41 @@ GENRES_MAP = {
 }
 
 
-# --- FUNCTION 1: Get the list from TMDB ---
+def get_movie_of_the_day():
+    url = "https://api.themoviedb.org/3/movie/popular"
+
+    query_params = {
+        "language": "es-MX",
+        "page": "1"
+    }
+
+    querystring = parse.urlencode(query_params)
+    full_url = f"{url}?{querystring}"
+
+    token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiNGZjYmJlMmI5MDJkMGM0YmMwZGUwZjEzOGZkODg5ZSIsIm5iZiI6MTc1Njc3MTE3OS42NDQsInN1YiI6IjY4YjYzMzZiZDJlMmQxZjk1NGI0ZmQ2NCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.XhklhS4vQPBe9Wa708mKyuQODu0Ya7TE7xWVxEkwcI0"
+
+    req = request.Request(full_url)
+    req.add_header("Authorization", f"Bearer {token}")
+    req.add_header("Accept", "application/json")
+
+    try:
+        with request.urlopen(req) as response:
+            if response.getcode() == 200:
+                data = json.loads(response.read().decode())
+                results = data.get("results", [])
+
+                if results:
+                    return results[0]
+                else:
+                    return "no_movies_found"
+
+    except error.URLError as e:
+        logger.error(f"API Error: {e}")
+        return "api_error"
+
+    return "api_error"
+
+#
 def get_movie_list(handler_input):
     base_url = "https://api.themoviedb.org/3/discover/movie"
 
@@ -78,11 +112,9 @@ def get_movie_list(handler_input):
     return "api_error"
 
 
-# --- FUNCTION 2: Get the NEXT movie from Session (Must be in this file!) ---
 def get_next_movie_response(handler_input):
     session_attr = handler_input.attributes_manager.session_attributes
 
-    # Debugging: See if the queue exists
     movie_queue = session_attr.get("movie_queue", [])
     current_index = session_attr.get("movie_index", 0)
 
@@ -91,13 +123,10 @@ def get_next_movie_response(handler_input):
     if not movie_queue:
         return "No tengo una lista activa de recomendaciones. Pídeme que te recomiende una película primero.", "¿Qué te gustaría hacer?"
 
-    # Increment Index
     new_index = current_index + 1
 
     if new_index < len(movie_queue):
-        # Update session
         session_attr["movie_index"] = new_index
-        # IMPORTANT: Save attributes back (optional in some setups but safer here)
         handler_input.attributes_manager.session_attributes = session_attr
 
         movie = movie_queue[new_index]
@@ -112,3 +141,16 @@ def get_next_movie_response(handler_input):
         session_attr["movie_queue"] = []
 
     return speak_output, reprompt
+
+  #
+def spin_the_wheel(handler_input):
+    results = get_movie_list(handler_input)
+
+    wheel_list = []
+    for i in range(6):
+        wheel_list.append(results[i])
+
+    num = random.randint(0,5)
+    movie = wheel_list[num]
+
+    return movie

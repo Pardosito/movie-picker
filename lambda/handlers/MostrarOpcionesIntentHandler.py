@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 class MostrarOpcionesIntentHandler(AbstractRequestHandler):
-    """Handler para MostrarOpcionesIntent (aún no implementado)."""
+    """Handler para MostrarOpcionesIntent"""
 
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
